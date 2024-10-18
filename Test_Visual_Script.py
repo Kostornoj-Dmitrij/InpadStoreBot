@@ -175,6 +175,7 @@ async def callback_inline(call: types.CallbackQuery):
         keyboard.add(types.InlineKeyboardButton('Назад', callback_data='help'))
 
         await bot.send_message(call.message.chat.id, "Выберите категорию, по которой вам нужна помощь.", reply_markup=keyboard)
+    
     elif call.data in ["install_error", "registration_error", "activation_error"]:
         user_data[call.message.chat.id].revit_choise = 'issue'
         keyboard = types.InlineKeyboardMarkup()
@@ -187,9 +188,11 @@ async def callback_inline(call: types.CallbackQuery):
         keyboard.row(types.InlineKeyboardButton('Revit 2025', callback_data='revit'),
                     types.InlineKeyboardButton('Назад', callback_data='install_help'))
         await bot.send_message(call.message.chat.id, "Выберите версию Revit, в котором запускали плагин", reply_markup=keyboard)
+    
     elif call.data == "revit":
         user_data[call.message.chat.id].state = 'license_key_input'
         await bot.send_message(call.message.chat.id, "Введите, пожалуйста, ваш лицензионный ключ, который вы использовали")
+    
     elif call.data == 'conception':
         keyboard = types.InlineKeyboardMarkup()
         keyboard.row(types.InlineKeyboardButton('Инсоляция', callback_data='plugin'),
