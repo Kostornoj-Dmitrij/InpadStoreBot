@@ -1,4 +1,4 @@
-from bot_scripts.config import TOKEN
+from bot_scripts.config import TOKEN, YOOTOKEN
 
 from aiogram import Bot, Dispatcher, types
 import asyncio
@@ -151,6 +151,12 @@ async def callback_inline(call: types.CallbackQuery):
         await show_questions_options(call.message.chat.id)
     
     elif call.data == 'license':
+        prices = [types.LabeledPrice(label='Руб', amount = 500000)]
+        await bot.send_invoice(call.message.chat.id, title="Модуль 'Планировка'",
+                         description='payment',
+                         provider_token=YOOTOKEN, currency='RUB',
+                         start_parameter='test_bot', prices=prices, payload='test-invoice-payload')
+        
         await show_license_options(call.message.chat.id)
 
     elif call.data == 'plugin_work_help':
