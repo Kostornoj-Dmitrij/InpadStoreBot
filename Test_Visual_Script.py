@@ -2,19 +2,7 @@ from bot_scripts.config import TOKEN, YOOTOKEN
 
 from aiogram import Bot, Dispatcher, types
 import asyncio
-class User:
-    def __init__(self, user_id):
-        self.user_id = ''
-        self.state = 'chat_start'
-        self.chat_id = ''
-        self.chat_name = ''
-        self.chat_link = ''
-        self.keywords = ''
-        self.keywords_id = ''
-        self.t_user_id = user_id
-        self.callback = self
-        self.chat_count = 0
-        self.revit_choise = ''
+from user import User
 
 bot = Bot(token = TOKEN)
 dp = Dispatcher(bot)
@@ -80,14 +68,15 @@ async def plugin_question_input(message):
     keyboard.add(types.InlineKeyboardButton('Не отправлять файл', callback_data='file_not_sending'))
     await bot.send_message(message.chat.id, "Отправьте, пожалуйста, файл на котором у вас возник вопрос", reply_markup=keyboard)
 
-@dp.message_handler(lambda message: user_data[message.chat.id].state == 'file_sending') 
+@dp.message_handler(lambda message: user_data[message.chat.id].state == 'file_sending', content_types=['document', 'photo']) 
 async def file_sending(message):
-    if message.content_type == 'document':
-        await bot.send_message(message.chat.id, "Данный вопрос был передан отделу разработок, в ближайшее время с вами свяжется специалист")
-        await start(message)
-    else:
-        await bot.send_message(message.chat.id, "Отправьте файл, а не текст")
-        await plugin_question_input(message)
+    await bot.send_message(message.chat.id, "Данный вопрос был передан отделу разработок, в ближайшее время с вами свяжется специалист")
+    await start(message)
+
+@dp.message_handler(content_types=['photo']) 
+async def issue_description_input(message): 
+    await bot.send_message(message.chat.id, "Данная ошибка была передана отделу разработок, в ближайшее время с вами свяжется специалист")
+    await start(message)
 
 
 @dp.message_handler(lambda message: True)
