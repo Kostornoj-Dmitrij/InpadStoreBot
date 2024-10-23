@@ -8,3 +8,9 @@ class User:
         self.feedback_text = ''
         self.license_key = ''
         self.build_version = ''
+        self.revit_version = ''
+        self.choise = ""
+        self.file_path = ''
+        self.photo_path = ''
+        self.renga_version = ''
+        self.plugin_id = ''

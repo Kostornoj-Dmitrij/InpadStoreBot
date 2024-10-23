@@ -31,13 +31,13 @@ install_help_keyboard.add(types.InlineKeyboardButton('Не получается 
 install_help_keyboard.add(types.InlineKeyboardButton('Назад', callback_data='help'))
 
 revit_keyboard = types.InlineKeyboardMarkup()
-revit_keyboard.row(types.InlineKeyboardButton('Revit 2019', callback_data='revit'),
-                    types.InlineKeyboardButton('Revit 2020', callback_data='revit'))
-revit_keyboard.row(types.InlineKeyboardButton('Revit 2021', callback_data='revit'),
-                    types.InlineKeyboardButton('Revit 2022', callback_data='revit'))
-revit_keyboard.row(types.InlineKeyboardButton('Revit 2023', callback_data='revit'),
-                    types.InlineKeyboardButton('Revit 2024', callback_data='revit'))
-revit_keyboard.row(types.InlineKeyboardButton('Revit 2025', callback_data='revit'),
+revit_keyboard.row(types.InlineKeyboardButton('Revit 2019', callback_data='revit_2019'),
+                    types.InlineKeyboardButton('Revit 2020', callback_data='revit_2020'))
+revit_keyboard.row(types.InlineKeyboardButton('Revit 2021', callback_data='revit_2021'),
+                    types.InlineKeyboardButton('Revit 2022', callback_data='revit_2022'))
+revit_keyboard.row(types.InlineKeyboardButton('Revit 2023', callback_data='revit_2023'),
+                    types.InlineKeyboardButton('Revit 2024', callback_data='revit_2024'))
+revit_keyboard.row(types.InlineKeyboardButton('Revit 2025', callback_data='revit_2025'),
                     types.InlineKeyboardButton('Назад', callback_data='start'))
 
 plugin_categories_keyboard = types.InlineKeyboardMarkup()
