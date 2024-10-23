@@ -1,1 +1,2 @@
 # InpadStoreBot
+Handlers.py - запуск
