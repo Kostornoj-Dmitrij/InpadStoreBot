@@ -14,3 +14,5 @@ class User:
         self.photo_path = ''
         self.renga_version = ''
         self.plugin_id = ''
+        self.plugin_category = ''
+        self.plugins_build = ''
