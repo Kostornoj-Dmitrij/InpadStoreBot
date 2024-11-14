@@ -1,13 +1,13 @@
 import sqlite3
 import json
-
+import os
 dbfile = 'data\database.db'
 
 conn = sqlite3.connect(dbfile, check_same_thread=False)
 
 cursor = conn.cursor()
 
-with open(f'data\plugins.json', encoding='utf-8') as f:
+with open('data\plugins.json', encoding='utf-8') as f:
     plugins_data = json.load(f)
 
 plugin_descriptions = "\n".join(
