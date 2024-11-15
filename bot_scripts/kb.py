@@ -133,5 +133,5 @@ general_plugins_keyboard.row(types.InlineKeyboardButton('Проверка мод
 
 renga_keyboard = types.InlineKeyboardMarkup()
 renga_keyboard.row(types.InlineKeyboardButton('Подсчет площадей', callback_data='renga_Подсчет площадейРенг'),
-                   types.InlineKeyboardButton('Активация', callback_data='plugin_Подсчет площадей'))
+                   types.InlineKeyboardButton('Активация', callback_data='renga_Активация'))
 renga_keyboard.row(types.InlineKeyboardButton('Назад', callback_data='start'))
