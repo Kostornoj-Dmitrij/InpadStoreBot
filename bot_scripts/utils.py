@@ -18,7 +18,7 @@ async def show_support_options(user_id):
 
 async def show_questions_options(user_id):
     user_data[user_id].state = "asking_question"
-    
+
     keyboard = kb.back_to_start_keyboard
     await bot.send_message(user_id, "Задайте ваш вопрос", reply_markup=keyboard)
 
@@ -28,6 +28,12 @@ async def show_license_options(user_id):
 async def get_links(plugin):
     cursor.execute("SELECT video_link, guide_link, plugin_link FROM Plugins WHERE name = ?", (plugin, ))
     links = cursor.fetchone()
+    if (links[2] == 'plugin_link' and links[1] == 'guide_link'):
+        return "Страница плагина: " + links[2]
+    if (links[2] == 'plugin_link'):
+        return "Текстовая инструкция: " + links[1] + "\nВидео-инструкция: " + links[0]
+    if (links[1] == 'guide_link'):
+        return "Страница плагина: " + links[2] + "\nВидео-инструкция: " + links[0]
     return "Страница плагина: " + links[2] + "\nТекстовая инструкция: " + links[1] + "\nВидео-инструкция: " + links[0]
 
 async def plugin_choice(chat_id, keyboard):
@@ -55,30 +61,30 @@ async def user_clear(message):
 
 async def file_saving(message):
     if message.document:
-        if message.document.file_size <= 5 * 1024 * 1024:
+        if message.document.file_size <= 100 * 1024 * 1024:
             file = await bot.get_file(message.document.file_id)
             file_path = f'data/files/{uuid.uuid4()}_{message.document.file_name}'
             await bot.download_file(file.file_path, file_path)
             user_data[message.chat.id].file_path = os.path.basename(file_path)
-            
+
             if user_data[message.chat.id].choise == 'issue' or user_data[message.chat.id].choise == 'install':
                 await bot.send_message(message.chat.id, "Данная ошибка была передана отделу разработок, в ближайшее время с вами свяжется специалист")
             elif user_data[message.chat.id].choise == 'renga_issue' or user_data[message.chat.id].choise == 'full_issue':
                 await bot.send_message(message.chat.id, "Данный вопрос был передан отделу разработок, в ближайшее время с вами свяжется специалист")
-            
+
             await save_feedback(message)
-        
+
         else:
             await bot.send_message(message.chat.id, "Файл превышает допустимый размер")
     else:
         await bot.send_message(message.chat.id, "Отправьте файл, пожалуйста!")
-    
+
     await show_help_options(message.chat.id)
 
-async def screen_saving(message):    
+async def screen_saving(message):
     if message.photo:
         photo = message.photo[-1]
-        if photo.file_size <= 5 * 1024 * 1024:
+        if photo.file_size <= 20 * 1024 * 1024:
             file = await bot.get_file(photo.file_id)
             file_path = f'data/files/{uuid.uuid4()}_{photo.file_id}.jpg'
             await bot.download_file(file.file_path, file_path)
@@ -87,29 +93,29 @@ async def screen_saving(message):
             await bot.send_message(message.chat.id, "Файл превышает допустимый размер")
     else:
         await bot.send_message(message.chat.id, "Отправьте изображение, пожалуйста!")
-    
+
     keyboard = kb.file_send_keyboard
 
     if user_data[message.chat.id].choise == 'issue' or user_data[message.chat.id].choise == 'renga_issue':
         await bot.send_message(message.chat.id, "Отправьте, пожалуйста, файл на котором вышла данная ошибка, чтобы мы смогли изучить данную проблему", reply_markup=keyboard)
     else:
         await save_feedback(message)
-        
+
         await bot.send_message(message.chat.id, "Данная ошибка была передана отделу разработок, в ближайшее время с вами свяжется специалист.")
         await show_help_options(message.chat.id)
 
 async def save_feedback(message):
     cursor.execute("INSERT INTO Feedback (user_id, feedback_text, license_key, build_version, revit_version, file_path, photo_path, created_at, " \
-                   "renga_version, plugin_id, plugins_build) VALUES (?, ?, ?, ?, ?, ?, ?, DATETIME('now'), ?, ?, ?)", 
-                   (message.chat.id, user_data[message.chat.id].feedback_text, user_data[message.chat.id].license_key,  
-                    user_data[message.chat.id].build_version, user_data[message.chat.id].revit_version, user_data[message.chat.id].file_path, 
+                   "renga_version, plugin_id, plugins_build) VALUES (?, ?, ?, ?, ?, ?, ?, DATETIME('now'), ?, ?, ?)",
+                   (message.chat.id, user_data[message.chat.id].feedback_text, user_data[message.chat.id].license_key,
+                    user_data[message.chat.id].build_version, user_data[message.chat.id].revit_version, user_data[message.chat.id].file_path,
                     user_data[message.chat.id].photo_path, user_data[message.chat.id].renga_version, user_data[message.chat.id].plugin_id, user_data[message.chat.id].plugins_build,))
     conn.commit()
     await user_clear(message)
 
 async def get_chatgpt_response(user_message):
     user_message = f'У вас есть информация о следующих плагинах:\n{plugin_short_descriptions}\n Пользователь спрашивает: {user_message}?\n Дай ответ информативно и без лишней воды:'
-    try: 
+    try:
         with GigaChat(credentials=GPT_SECRET_KEY, verify_ssl_certs=False) as giga:
             response = giga.chat(user_message)
             return response.choices[0].message.content
