@@ -1,6 +1,6 @@
 from config import TOKEN, YOOTOKEN, sub_info, api_id, api_hash, GPT_SECRET_KEY
 from user import User
-from database import cursor, conn
+from database import cursor, conn, project_dir
 from main import bot, dp, user_data
 import utils
 import kb

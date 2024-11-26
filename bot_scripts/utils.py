@@ -1,3 +1,4 @@
+from bot_scripts.database import project_dir
 from main import bot, user_data
 from database import cursor, conn, plugin_descriptions, plugin_short_descriptions
 from config import TOKEN
@@ -63,7 +64,7 @@ async def file_saving(message):
     if message.document:
         if message.document.file_size <= 100 * 1024 * 1024:
             file = await bot.get_file(message.document.file_id)
-            file_path = f'data/files/{uuid.uuid4()}_{message.document.file_name}'
+            file_path = os.path.join(project_dir, 'data', 'files', f'{uuid.uuid4()}_{message.document.file_name}')
             await bot.download_file(file.file_path, file_path)
             user_data[message.chat.id].file_path = os.path.basename(file_path)
 
@@ -86,7 +87,7 @@ async def screen_saving(message):
         photo = message.photo[-1]
         if photo.file_size <= 20 * 1024 * 1024:
             file = await bot.get_file(photo.file_id)
-            file_path = f'data/files/{uuid.uuid4()}_{photo.file_id}.jpg'
+            file_path = os.path.join(project_dir, 'data', 'files', f'{uuid.uuid4()}_{photo.file_id}.jpg')
             await bot.download_file(file.file_path, file_path)
             user_data[message.chat.id].photo_path = os.path.basename(file_path)
         else:

@@ -1,13 +1,16 @@
 import sqlite3
 import json
 import os
-dbfile = 'data\database.db'
+
+
+project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Поднимаемся на уровень выше
+dbfile = os.path.join(project_dir, 'data', 'database.db')
 
 conn = sqlite3.connect(dbfile, check_same_thread=False)
 
 cursor = conn.cursor()
 
-with open('data\plugins.json', encoding='utf-8') as f:
+with open(os.path.join(project_dir, 'data', 'plugins.json'), encoding='utf-8') as f:
     plugins_data = json.load(f)
 
 plugin_descriptions = "\n".join(
