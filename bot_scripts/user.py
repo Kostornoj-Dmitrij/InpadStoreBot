@@ -4,12 +4,12 @@ class User:
         self.state = 'chat_start'
         self.t_user_id = user_id
         self.callback = self
-        self.revit_choise = ''
+        self.revit_choice = ''
         self.feedback_text = ''
         self.license_key = ''
         self.build_version = ''
         self.revit_version = ''
-        self.choise = ""
+        self.choice = ""
         self.file_path = ''
         self.photo_path = ''
         self.renga_version = ''

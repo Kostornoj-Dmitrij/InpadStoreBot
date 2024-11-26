@@ -50,10 +50,10 @@ async def license_key_input(message):
 @dp.message_handler(lambda message: user_data[message.chat.id].state == 'build_version_input') 
 async def build_version_input(message): 
     
-    if user_data[message.chat.id].revit_choise == 'plugin':
+    if user_data[message.chat.id].revit_choice == 'plugin':
         user_data[message.chat.id].state = 'plugin_question_input'
         await bot.send_message(message.chat.id, "Опишите ваш вопрос")
-    elif user_data[message.chat.id].revit_choise == 'issue':
+    elif user_data[message.chat.id].revit_choice == 'issue':
         user_data[message.chat.id].state = 'issue_description_input'
         await bot.send_message(message.chat.id, "Отправьте, пожалуйста, скриншот ошибки и опишите вашу проблему")
 
@@ -100,8 +100,8 @@ async def show_help_options(user_id):
     await bot.send_message(user_id, "Выберите пункт, по которому вам нужна помощь", reply_markup=keyboard)
 
 async def show_support_options(user_id):
-    if user_data[user_id].revit_choise != 'plugin':
-        user_data[user_id].revit_choise = 'support'
+    if user_data[user_id].revit_choice != 'plugin':
+        user_data[user_id].revit_choice = 'support'
     keyboard = types.InlineKeyboardMarkup()
     keyboard.row(types.InlineKeyboardButton('Концепция', callback_data='conception'),
                 types.InlineKeyboardButton('Архитектура', callback_data='architecture'))
@@ -149,11 +149,11 @@ async def callback_inline(call: types.CallbackQuery):
         await show_license_options(call.message.chat.id)
 
     elif call.data == 'plugin_work_help':
-        user_data[call.message.chat.id].revit_choise = 'plugin'
+        user_data[call.message.chat.id].revit_choice = 'plugin'
         await show_support_options(call.message.chat.id)
 
     elif call.data == 'issue_help':
-        user_data[call.message.chat.id].revit_choise = 'plugin'
+        user_data[call.message.chat.id].revit_choice = 'plugin'
         await show_support_options(call.message.chat.id)
 
     elif call.data == 'install_help':
@@ -166,7 +166,7 @@ async def callback_inline(call: types.CallbackQuery):
         await bot.send_message(call.message.chat.id, "Выберите категорию, по которой вам нужна помощь.", reply_markup=keyboard)
     
     elif call.data in ["install_error", "registration_error", "activation_error"]:
-        user_data[call.message.chat.id].revit_choise = 'issue'
+        user_data[call.message.chat.id].revit_choice = 'issue'
         keyboard = types.InlineKeyboardMarkup()
         keyboard.row(types.InlineKeyboardButton('Revit 2019', callback_data='revit'),
                     types.InlineKeyboardButton('Revit 2020', callback_data='revit'))
@@ -193,7 +193,7 @@ async def callback_inline(call: types.CallbackQuery):
         keyboard.row(types.InlineKeyboardButton('БыстроТЭПы', callback_data='plugin'),
                     types.InlineKeyboardButton('Подсчет площадей', callback_data='plugin'))
         keyboard.row(types.InlineKeyboardButton('Назад', callback_data='support'))
-        if user_data[call.message.chat.id].revit_choise == 'plugin':
+        if user_data[call.message.chat.id].revit_choice == 'plugin':
             await bot.send_message(user_id, "Выберите каким плагином вы пользовались:", reply_markup=keyboard)
         else:
             await bot.send_message(user_id, "Выберите на какой плагин вам нужна информация:", reply_markup=keyboard)
@@ -212,7 +212,7 @@ async def callback_inline(call: types.CallbackQuery):
                     types.InlineKeyboardButton('Нумерация квартир', callback_data='plugin'))
         keyboard.row(types.InlineKeyboardButton('Назад', callback_data='support'))
 
-        if user_data[call.message.chat.id].revit_choise == 'plugin':
+        if user_data[call.message.chat.id].revit_choice == 'plugin':
             await bot.send_message(user_id, "Выберите каким плагином вы пользовались:", reply_markup=keyboard)
         else:
             await bot.send_message(user_id, "Выберите на какой плагин вам нужна информация:", reply_markup=keyboard)
@@ -229,7 +229,7 @@ async def callback_inline(call: types.CallbackQuery):
                     types.InlineKeyboardButton('Создание видов каркасов', callback_data='plugin'))
         keyboard.row(types.InlineKeyboardButton('Назад', callback_data='support'))
 
-        if user_data[call.message.chat.id].revit_choise == 'plugin':
+        if user_data[call.message.chat.id].revit_choice == 'plugin':
             await bot.send_message(user_id, "Выберите каким плагином вы пользовались:", reply_markup=keyboard)
         else:
             await bot.send_message(user_id, "Выберите на какой плагин вам нужна информация:", reply_markup=keyboard)
@@ -246,7 +246,7 @@ async def callback_inline(call: types.CallbackQuery):
                     types.InlineKeyboardButton('S изоляции', callback_data='plugin'))
         keyboard.row(types.InlineKeyboardButton('Назад', callback_data='support'))
 
-        if user_data[call.message.chat.id].revit_choise == 'plugin':
+        if user_data[call.message.chat.id].revit_choice == 'plugin':
             await bot.send_message(user_id, "Выберите каким плагином вы пользовались:", reply_markup=keyboard)
         else:
             await bot.send_message(user_id, "Выберите на какой плагин вам нужна информация:", reply_markup=keyboard)
@@ -267,7 +267,7 @@ async def callback_inline(call: types.CallbackQuery):
                     types.InlineKeyboardButton('Проверка заданий', callback_data='plugin'))
         keyboard.row(types.InlineKeyboardButton('Назад', callback_data='support'))
 
-        if user_data[call.message.chat.id].revit_choise == 'plugin':
+        if user_data[call.message.chat.id].revit_choice == 'plugin':
             await bot.send_message(user_id, "Выберите каким плагином вы пользовались:", reply_markup=keyboard)
         else:
             await bot.send_message(user_id, "Выберите на какой плагин вам нужна информация:", reply_markup=keyboard)
@@ -289,13 +289,13 @@ async def callback_inline(call: types.CallbackQuery):
         keyboard.row(types.InlineKeyboardButton('Проверка модели', callback_data='plugin'),
                     types.InlineKeyboardButton('Назад', callback_data='support'))
 
-        if user_data[call.message.chat.id].revit_choise == 'plugin':
+        if user_data[call.message.chat.id].revit_choice == 'plugin':
             await bot.send_message(user_id, "Выберите каким плагином вы пользовались:", reply_markup=keyboard)
         else:
             await bot.send_message(user_id, "Выберите на какой плагин вам нужна информация:", reply_markup=keyboard)
 
     elif call.data == 'plugin':
-        if user_data[call.message.chat.id].revit_choise == 'plugin':
+        if user_data[call.message.chat.id].revit_choice == 'plugin':
             keyboard = types.InlineKeyboardMarkup()
             keyboard.row(types.InlineKeyboardButton('Revit 2019', callback_data='revit'),
                         types.InlineKeyboardButton('Revit 2020', callback_data='revit'))

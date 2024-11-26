@@ -1,12 +1,10 @@
 from bot_scripts.database import project_dir
 from main import bot, user_data
-from database import cursor, conn, plugin_descriptions, plugin_short_descriptions
-from config import TOKEN
+from database import cursor, conn, plugin_short_descriptions
 import kb
 import os
 import uuid
 from config import GPT_SECRET_KEY
-
 from gigachat import GigaChat
 
 async def show_help_options(user_id):
@@ -29,16 +27,16 @@ async def show_license_options(user_id):
 async def get_links(plugin):
     cursor.execute("SELECT video_link, guide_link, plugin_link FROM Plugins WHERE name = ?", (plugin, ))
     links = cursor.fetchone()
-    if (links[2] == 'plugin_link' and links[1] == 'guide_link'):
+    if links[2] == 'plugin_link' and links[1] == 'guide_link':
         return "Страница плагина: " + links[2]
-    if (links[2] == 'plugin_link'):
+    if links[2] == 'plugin_link':
         return "Текстовая инструкция: " + links[1] + "\nВидео-инструкция: " + links[0]
-    if (links[1] == 'guide_link'):
+    if links[1] == 'guide_link':
         return "Страница плагина: " + links[2] + "\nВидео-инструкция: " + links[0]
     return "Страница плагина: " + links[2] + "\nТекстовая инструкция: " + links[1] + "\nВидео-инструкция: " + links[0]
 
 async def plugin_choice(chat_id, keyboard):
-    if user_data[chat_id].choise == 'support':
+    if user_data[chat_id].choice == 'support':
         await bot.send_message(chat_id, "Выберите на какой плагин вам нужна информация:", reply_markup=keyboard)
     elif user_data[chat_id].plugin_category == 'renga':
         await bot.send_message(chat_id, "С каким плагином у вас возникла проблема?", reply_markup=keyboard)
@@ -47,12 +45,12 @@ async def plugin_choice(chat_id, keyboard):
 
 async def user_clear(message):
     user_data[message.chat.id].state = 'chat_start'
-    user_data[message.chat.id].revit_choise = 'chat_start'
+    user_data[message.chat.id].revit_choice = 'chat_start'
     user_data[message.chat.id].feedback_text = ''
     user_data[message.chat.id].license_key = ''
     user_data[message.chat.id].build_version = ''
     user_data[message.chat.id].revit_version = ''
-    user_data[message.chat.id].choise = 'chat_start'
+    user_data[message.chat.id].choice = 'chat_start'
     user_data[message.chat.id].file_path = ''
     user_data[message.chat.id].photo_path = ''
     user_data[message.chat.id].renga_version = ''
@@ -68,9 +66,9 @@ async def file_saving(message):
             await bot.download_file(file.file_path, file_path)
             user_data[message.chat.id].file_path = os.path.basename(file_path)
 
-            if user_data[message.chat.id].choise == 'issue' or user_data[message.chat.id].choise == 'install':
+            if user_data[message.chat.id].choice == 'issue' or user_data[message.chat.id].choice == 'install':
                 await bot.send_message(message.chat.id, "Данная ошибка была передана отделу разработок, в ближайшее время с вами свяжется специалист")
-            elif user_data[message.chat.id].choise == 'renga_issue' or user_data[message.chat.id].choise == 'full_issue':
+            elif user_data[message.chat.id].choice == 'renga_issue' or user_data[message.chat.id].choice == 'full_issue':
                 await bot.send_message(message.chat.id, "Данный вопрос был передан отделу разработок, в ближайшее время с вами свяжется специалист")
 
             await save_feedback(message)
@@ -97,7 +95,7 @@ async def screen_saving(message):
 
     keyboard = kb.file_send_keyboard
 
-    if user_data[message.chat.id].choise == 'issue' or user_data[message.chat.id].choise == 'renga_issue':
+    if user_data[message.chat.id].choice == 'issue' or user_data[message.chat.id].choice == 'renga_issue':
         await bot.send_message(message.chat.id, "Отправьте, пожалуйста, файл на котором вышла данная ошибка, чтобы мы смогли изучить данную проблему", reply_markup=keyboard)
     else:
         await save_feedback(message)
@@ -106,7 +104,7 @@ async def screen_saving(message):
         await show_help_options(message.chat.id)
 
 async def save_feedback(message):
-    cursor.execute("INSERT INTO Feedback (user_id, feedback_text, license_key, build_version, revit_version, file_path, photo_path, created_at, " \
+    cursor.execute("INSERT INTO Feedback (user_id, feedback_text, license_key, build_version, revit_version, file_path, photo_path, created_at, "
                    "renga_version, plugin_id, plugins_build) VALUES (?, ?, ?, ?, ?, ?, ?, DATETIME('now'), ?, ?, ?)",
                    (message.chat.id, user_data[message.chat.id].feedback_text, user_data[message.chat.id].license_key,
                     user_data[message.chat.id].build_version, user_data[message.chat.id].revit_version, user_data[message.chat.id].file_path,

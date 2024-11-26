@@ -1,6 +1,6 @@
-from config import TOKEN, YOOTOKEN, sub_info, api_id, api_hash, GPT_SECRET_KEY
+from config import YOOTOKEN
 from user import User
-from database import cursor, conn, project_dir
+from database import cursor
 from main import bot, dp, user_data
 import utils
 import kb
@@ -39,16 +39,16 @@ async def license_key_input(message):
 async def build_version_input(message):
     user_data[message.chat.id].build_version = message.text
 
-    if user_data[message.chat.id].choise == 'full_issue':
+    if user_data[message.chat.id].choice == 'full_issue':
         user_data[message.chat.id].state = 'plugin_question_input'
         await bot.send_message(message.chat.id, "Опишите ваш вопрос")
 
-    elif user_data[message.chat.id].choise == 'issue':
+    elif user_data[message.chat.id].choice == 'issue':
         user_data[message.chat.id].state = 'screen_sending'
         user_data[message.chat.id].feedback_text = 'error_report'
         await bot.send_message(message.chat.id, "Отправьте, пожалуйста, скриншот ошибки")
 
-    elif user_data[message.chat.id].choise == 'install':
+    elif user_data[message.chat.id].choice == 'install':
         user_data[message.chat.id].state = 'install_question_input'
         await bot.send_message(message.chat.id, "Опишите вашу проблему")
 
@@ -108,68 +108,66 @@ async def handle_text(message):
 
 @dp.callback_query_handler()
 async def callback_inline(call: types.CallbackQuery):
-    user_id = call.message.chat.id
-
     if call.data == 'start':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         await start(call.message)
 
     elif call.data == 'help':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         await utils.show_help_options(call.message.chat.id)
 
     elif call.data == 'support':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
-        user_data[call.message.chat.id].choise = 'support'
+        user_data[call.message.chat.id].choice = 'support'
 
         await utils.show_support_options(call.message.chat.id)
 
     elif call.data == 'questions':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         await utils.show_questions_options(call.message.chat.id)
 
     elif call.data == 'license':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
-        user_data[call.message.chat.id].choise = 'license'
+        user_data[call.message.chat.id].choice = 'license'
 
         await utils.show_license_options(call.message.chat.id)
 
     elif call.data == 'plugin_work_help':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
-        user_data[call.message.chat.id].choise = 'full_issue'
+        user_data[call.message.chat.id].choice = 'full_issue'
 
         await utils.show_support_options(call.message.chat.id)
 
     elif call.data == 'issue_help':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
-        user_data[call.message.chat.id].choise = 'issue'
+        user_data[call.message.chat.id].choice = 'issue'
 
         await utils.show_support_options(call.message.chat.id)
 
     elif call.data == 'install_help':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
-        user_data[call.message.chat.id].choise = 'install'
+        user_data[call.message.chat.id].choice = 'install'
 
         keyboard = kb.install_help_keyboard
         await bot.send_message(call.message.chat.id, "Выберите категорию, по которой вам нужна помощь.", reply_markup=keyboard)
 
     elif call.data in ["install_error", "registration_error", "activation_error"]:
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         keyboard = kb.revit_keyboard
         await bot.send_message(call.message.chat.id, "Выберите версию Revit, в котором запускали плагин", reply_markup=keyboard)
     elif call.data in ["renga_work_help", "renga_issue_help"]:
-        user_data[call.message.chat.id].choise = 'renga_issue'
+        user_data[call.message.chat.id].choice = 'renga_issue'
         user_data[call.message.chat.id].state = 'renga_question_input'
         await bot.send_message(call.message.chat.id, "Опишите проблему")
     elif call.data.startswith("revit_"):
         if user_data[call.message.chat.id].plugin_category != 'renga':
-            await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+            await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         user_data[call.message.chat.id].state = 'license_key_input'
         user_data[call.message.chat.id].revit_version = call.data[6:]
@@ -177,43 +175,43 @@ async def callback_inline(call: types.CallbackQuery):
         await bot.send_message(call.message.chat.id, "Введите, пожалуйста, ваш лицензионный ключ, который вы использовали")
 
     elif call.data == 'conception':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         keyboard = kb.conception_keyboard
         await utils.plugin_choice(call.message.chat.id, keyboard)
 
     elif call.data == 'architecture':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         keyboard = kb.architecture_keyboard
         await utils.plugin_choice(call.message.chat.id, keyboard)
 
     elif call.data == 'constructive':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         keyboard = kb.constructive_keyboard
         await utils.plugin_choice(call.message.chat.id, keyboard)
 
     elif call.data == 'ov_vk':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         keyboard = kb.ov_vk_keyboard
         await utils.plugin_choice(call.message.chat.id, keyboard)
 
     elif call.data == 'boxes':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         keyboard = kb.boxes_keyboard
         await utils.plugin_choice(call.message.chat.id, keyboard)
 
     elif call.data == 'general':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         keyboard = kb.general_plugins_keyboard
         await utils.plugin_choice(call.message.chat.id, keyboard)
 
     elif call.data == 'renga':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         user_data[call.message.chat.id].plugin_category = 'renga'
 
@@ -221,7 +219,7 @@ async def callback_inline(call: types.CallbackQuery):
         await utils.plugin_choice(call.message.chat.id, keyboard)
 
     elif call.data.startswith('plugin_'):
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         plugin_name = call.data[7:]
         if plugin_name == 'Проверка перес/заданий':
@@ -230,11 +228,11 @@ async def callback_inline(call: types.CallbackQuery):
         cursor.execute("SELECT plugin_id FROM Plugins WHERE name = ?", (plugin_name,))
         user_data[call.message.chat.id].plugin_id = cursor.fetchone()[0]
 
-        if user_data[call.message.chat.id].choise[-5:] == 'issue':
+        if user_data[call.message.chat.id].choice[-5:] == 'issue':
             keyboard = kb.revit_keyboard
             await bot.send_message(call.message.chat.id, "Выберите версию Revit, в котором запускали плагин", reply_markup=keyboard)
 
-        elif user_data[call.message.chat.id].choise == 'license':
+        elif user_data[call.message.chat.id].choice == 'license':
 
             prices = [types.LabeledPrice(label='Руб', amount = 500000)]
             await bot.send_invoice(call.message.chat.id, title='Плагин' + plugin_name,
@@ -249,19 +247,19 @@ async def callback_inline(call: types.CallbackQuery):
             await start(call.message)
 
     elif call.data.startswith('renga_'):
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         plugin_name = call.data[6:]
         cursor.execute("SELECT plugin_id FROM Plugins WHERE name = ?", (plugin_name,))
         user_data[call.message.chat.id].plugin_id = cursor.fetchone()[0]
 
-        if user_data[call.message.chat.id].choise == 'support':
+        if user_data[call.message.chat.id].choice == 'support':
             links = await utils.get_links(call.data[6:])
 
             await bot.send_message(call.message.chat.id, "Ссылки на vk видео и pdf инструкции (файлы):\n" + links)
             await start(call.message)
 
-        elif user_data[call.message.chat.id].choise == 'license':
+        elif user_data[call.message.chat.id].choice == 'license':
 
             prices = [types.LabeledPrice(label='Руб', amount = 500000)]
             await bot.send_invoice(call.message.chat.id, title='Плагин' + plugin_name,
@@ -275,14 +273,14 @@ async def callback_inline(call: types.CallbackQuery):
 
 
     elif call.data == 'file_sending':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         user_data[call.message.chat.id].state = 'file_sending'
 
         await bot.send_message(call.message.chat.id, "Прикрепите файл сюда")
 
     elif call.data == 'file_not_sending':
-        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
         await utils.save_feedback(call.message)
 

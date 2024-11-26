@@ -1,9 +1,8 @@
 import sqlite3
-import json
 
-dbfile = 'data\database.db'
+db_file = 'data\database.db'
 
-conn = sqlite3.connect(dbfile, check_same_thread=False)
+conn = sqlite3.connect(db_file, check_same_thread=False)
 
 cursor = conn.cursor()
 

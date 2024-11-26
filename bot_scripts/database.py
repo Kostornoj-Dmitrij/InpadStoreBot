@@ -3,10 +3,10 @@ import json
 import os
 
 
-project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Поднимаемся на уровень выше
-dbfile = os.path.join(project_dir, 'data', 'database.db')
+project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+db_file = os.path.join(project_dir, 'data', 'database.db')
 
-conn = sqlite3.connect(dbfile, check_same_thread=False)
+conn = sqlite3.connect(db_file, check_same_thread=False)
 
 cursor = conn.cursor()
 
