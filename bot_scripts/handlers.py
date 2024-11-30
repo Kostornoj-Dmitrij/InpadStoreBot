@@ -16,41 +16,20 @@ async def start(message: types.Message):
     user = User(user_id)
     user_data[user_id] = user
     await utils.user_clear(message)
+    cursor.execute("SELECT COUNT(*) FROM Users WHERE t_user_chat_id = ?", (user_id,))
+
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("INSERT INTO Users (username, t_user_chat_id, created_at) "
+                       "VALUES (?, ?, DATETIME('now'))",
+                       (message.from_user.username, user_id))
+        conn.commit()
     keyboard = kb.start_keyboard
     await bot.send_message(user_id, "Привет! Добро пожаловать в бота.", reply_markup=keyboard)
 
 
 @dp.message_handler(lambda message: user_data[message.chat.id].state == 'asking_question')
 async def asking_question(message):
-    data_to_send = {
-        "fields": {
-            "TITLE": "Запрос от Telegram-бота",
-            "DESCRIPTION": f"Пользователь ввел версию сборки: {user_data[message.chat.id].build_version}",
-            "RESPONSIBLE_ID": 1
-        }
-    }
-
-    try:
-        response = requests.post(
-            BITRIX_WEBHOOK_URL + "crm.lead.add.json",
-            json=data_to_send
-        )
-
-        if response.status_code == 200 and response.json().get("result"):
-            await bot.send_message(
-                message.chat.id,
-                "Ваши данные успешно отправлены в Битрикс24!"
-            )
-        else:
-            await bot.send_message(
-                message.chat.id,
-                f"Ошибка отправки данных в Битрикс24: {response.text}"
-            )
-    except Exception as e:
-        await bot.send_message(
-            message.chat.id,
-            f"Произошла ошибка при взаимодействии с Битрикс24: {str(e)}"
-        )
+    await utils.send_data_to_bitrix(message, user_data[message.chat.id].build_version)
     await utils.answer_generation(message)
 
     keyboard = kb.question_keyboard

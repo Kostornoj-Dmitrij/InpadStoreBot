@@ -1,11 +1,14 @@
-from bot_scripts.database import project_dir
 from main import bot, user_data
-from database import cursor, conn, plugin_short_descriptions
+from database import cursor, conn, plugin_short_descriptions, project_dir
 import kb
 import os
 import uuid
-from config import GPT_SECRET_KEY
+from config import GPT_SECRET_KEY, B24_WEBHOOK
 from gigachat import GigaChat
+import requests
+from pyairtable import Table
+from pyairtable.formulas import match
+from dotenv import load_dotenv, find_dotenv
 
 async def show_help_options(user_id):
     keyboard = kb.help_keyboard
@@ -104,9 +107,12 @@ async def screen_saving(message):
         await show_help_options(message.chat.id)
 
 async def save_feedback(message):
+    cursor.execute("SELECT user_id FROM Users WHERE t_user_chat_id = ?", (message.chat.id, ))
+    user_id = cursor.fetchone()[0]
+
     cursor.execute("INSERT INTO Feedback (user_id, feedback_text, license_key, build_version, revit_version, file_path, photo_path, created_at, "
                    "renga_version, plugin_id, plugins_build) VALUES (?, ?, ?, ?, ?, ?, ?, DATETIME('now'), ?, ?, ?)",
-                   (message.chat.id, user_data[message.chat.id].feedback_text, user_data[message.chat.id].license_key,
+                   (user_id, user_data[message.chat.id].feedback_text, user_data[message.chat.id].license_key,
                     user_data[message.chat.id].build_version, user_data[message.chat.id].revit_version, user_data[message.chat.id].file_path,
                     user_data[message.chat.id].photo_path, user_data[message.chat.id].renga_version, user_data[message.chat.id].plugin_id, user_data[message.chat.id].plugins_build,))
     conn.commit()
@@ -129,6 +135,63 @@ async def answer_generation(message):
     user_query = message.text
     chatgpt_response = await get_chatgpt_response(user_query)
 
-    cursor.execute("INSERT INTO Questions (user_id, question, answer, created_at) VALUES (?, ?, ?, DATETIME('now'))", (message.chat.id, user_query[:100] + '...', chatgpt_response[:100] + '...',))
+    cursor.execute("SELECT user_id FROM Users WHERE t_user_chat_id = ?", (message.chat.id, ))
+    user_id = cursor.fetchone()[0]
+
+    cursor.execute("INSERT INTO Questions (user_id, question, answer, created_at) VALUES (?, ?, ?, DATETIME('now'))", (user_id, user_query[:100] + '...', chatgpt_response[:100] + '...',))
     conn.commit()
     await send_long_message(message.chat.id, chatgpt_response)
+
+async def send_data_to_bitrix(message, data):
+    payload = {
+        "fields": {
+            "TITLE": "Запрос от Telegram-бота",
+            "NAME": message.chat.id,
+            "DESCRIPTION": f"Пользователь ввел версию сборки: {user_data[message.chat.id].build_version}",
+            "RESPONSIBLE_ID": 1
+        }
+    }
+
+    try:
+        response = requests.post(
+            f"{B24_WEBHOOK}crm.lead.add.json", json=payload
+        )
+
+        if response.status_code == 200 and response.json().get("result"):
+            await bot.send_message(
+                message.chat.id,
+                "Ваши данные успешно отправлены в Битрикс24!"
+            )
+        else:
+            await bot.send_message(
+                message.chat.id,
+                f"Ошибка отправки данных в Битрикс24: {response.text}"
+            )
+    except Exception as e:
+        await bot.send_message(
+            message.chat.id,
+            f"Произошла ошибка при взаимодействии с Битрикс24: {str(e)}"
+        )
+
+
+async def create_record(table_name: str, record: dict) -> dict:
+    table = Table(AIRTABLE_TOKEN, BASE_ID, table_name)
+    result = table.create(record)
+    return result
+
+async def get_record(table_name: str, filter: dict) -> dict:
+    formula = match(filter)
+    table = Table(AIRTABLE_TOKEN, BASE_ID, table_name)
+    result = table.all(formula=formula)
+    return result
+
+async def update_record(table_name: str, filter: dict, update: dict) -> dict:
+    formula = match(filter)
+    table = Table(AIRTABLE_TOKEN, BASE_ID, table_name)
+    record = table.all(formula=formula)
+    if len(record) > 0:
+        id = record[0]['id']
+        result = table.update(id, update)
+        return result
+    else:
+        return []
