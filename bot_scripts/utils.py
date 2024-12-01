@@ -6,9 +6,9 @@ import uuid
 from config import GPT_SECRET_KEY, B24_WEBHOOK
 from gigachat import GigaChat
 import requests
-from pyairtable import Table
-from pyairtable.formulas import match
-from dotenv import load_dotenv, find_dotenv
+from airtable_utils import create_record
+from datetime import datetime
+import pytz
 
 async def show_help_options(user_id):
     keyboard = kb.help_keyboard
@@ -30,48 +30,48 @@ async def show_license_options(user_id):
 async def get_links(plugin):
     cursor.execute("SELECT video_link, guide_link, plugin_link FROM Plugins WHERE name = ?", (plugin, ))
     links = cursor.fetchone()
-    if links[2] == 'plugin_link' and links[1] == 'guide_link':
+    if links[2] == "plugin_link" and links[1] == "guide_link":
         return "Страница плагина: " + links[2]
-    if links[2] == 'plugin_link':
+    if links[2] == "plugin_link":
         return "Текстовая инструкция: " + links[1] + "\nВидео-инструкция: " + links[0]
-    if links[1] == 'guide_link':
+    if links[1] == "guide_link":
         return "Страница плагина: " + links[2] + "\nВидео-инструкция: " + links[0]
     return "Страница плагина: " + links[2] + "\nТекстовая инструкция: " + links[1] + "\nВидео-инструкция: " + links[0]
 
 async def plugin_choice(chat_id, keyboard):
-    if user_data[chat_id].choice == 'support':
+    if user_data[chat_id].choice == "support":
         await bot.send_message(chat_id, "Выберите на какой плагин вам нужна информация:", reply_markup=keyboard)
-    elif user_data[chat_id].plugin_category == 'renga':
+    elif user_data[chat_id].plugin_category == "renga":
         await bot.send_message(chat_id, "С каким плагином у вас возникла проблема?", reply_markup=keyboard)
     else:
         await bot.send_message(chat_id, "Выберите каким плагином вы пользовались:", reply_markup=keyboard)
 
 async def user_clear(message):
-    user_data[message.chat.id].state = 'chat_start'
-    user_data[message.chat.id].revit_choice = 'chat_start'
-    user_data[message.chat.id].feedback_text = ''
-    user_data[message.chat.id].license_key = ''
-    user_data[message.chat.id].build_version = ''
-    user_data[message.chat.id].revit_version = ''
-    user_data[message.chat.id].choice = 'chat_start'
-    user_data[message.chat.id].file_path = ''
-    user_data[message.chat.id].photo_path = ''
-    user_data[message.chat.id].renga_version = ''
-    user_data[message.chat.id].plugin_id = ''
-    user_data[message.chat.id].plugin_category = 'chat_start'
-    user_data[message.chat.id].plugins_build = ''
+    user_data[message.chat.id].state = "chat_start"
+    user_data[message.chat.id].revit_choice = "chat_start"
+    user_data[message.chat.id].feedback_text = ""
+    user_data[message.chat.id].license_key = ""
+    user_data[message.chat.id].build_version = ""
+    user_data[message.chat.id].revit_version = ""
+    user_data[message.chat.id].choice = "chat_start"
+    user_data[message.chat.id].file_path = ""
+    user_data[message.chat.id].photo_path = ""
+    user_data[message.chat.id].renga_version = ""
+    user_data[message.chat.id].plugin_id = ""
+    user_data[message.chat.id].plugin_category = "chat_start"
+    user_data[message.chat.id].plugins_build = ""
 
 async def file_saving(message):
     if message.document:
         if message.document.file_size <= 100 * 1024 * 1024:
             file = await bot.get_file(message.document.file_id)
-            file_path = os.path.join(project_dir, 'data', 'files', f'{uuid.uuid4()}_{message.document.file_name}')
+            file_path = os.path.join(project_dir, "data", "files", f"{uuid.uuid4()}_{message.document.file_name}")
             await bot.download_file(file.file_path, file_path)
             user_data[message.chat.id].file_path = os.path.basename(file_path)
 
-            if user_data[message.chat.id].choice == 'issue' or user_data[message.chat.id].choice == 'install':
+            if user_data[message.chat.id].choice == "issue" or user_data[message.chat.id].choice == "install":
                 await bot.send_message(message.chat.id, "Данная ошибка была передана отделу разработок, в ближайшее время с вами свяжется специалист")
-            elif user_data[message.chat.id].choice == 'renga_issue' or user_data[message.chat.id].choice == 'full_issue':
+            elif user_data[message.chat.id].choice == "renga_issue" or user_data[message.chat.id].choice == "full_issue":
                 await bot.send_message(message.chat.id, "Данный вопрос был передан отделу разработок, в ближайшее время с вами свяжется специалист")
 
             await save_feedback(message)
@@ -88,7 +88,7 @@ async def screen_saving(message):
         photo = message.photo[-1]
         if photo.file_size <= 20 * 1024 * 1024:
             file = await bot.get_file(photo.file_id)
-            file_path = os.path.join(project_dir, 'data', 'files', f'{uuid.uuid4()}_{photo.file_id}.jpg')
+            file_path = os.path.join(project_dir, "data", "files", f"{uuid.uuid4()}_{photo.file_id}.jpg")
             await bot.download_file(file.file_path, file_path)
             user_data[message.chat.id].photo_path = os.path.basename(file_path)
         else:
@@ -98,7 +98,7 @@ async def screen_saving(message):
 
     keyboard = kb.file_send_keyboard
 
-    if user_data[message.chat.id].choice == 'issue' or user_data[message.chat.id].choice == 'renga_issue':
+    if user_data[message.chat.id].choice == "issue" or user_data[message.chat.id].choice == "renga_issue":
         await bot.send_message(message.chat.id, "Отправьте, пожалуйста, файл на котором вышла данная ошибка, чтобы мы смогли изучить данную проблему", reply_markup=keyboard)
     else:
         await save_feedback(message)
@@ -110,16 +110,61 @@ async def save_feedback(message):
     cursor.execute("SELECT user_id FROM Users WHERE t_user_chat_id = ?", (message.chat.id, ))
     user_id = cursor.fetchone()[0]
 
-    cursor.execute("INSERT INTO Feedback (user_id, feedback_text, license_key, build_version, revit_version, file_path, photo_path, created_at, "
-                   "renga_version, plugin_id, plugins_build) VALUES (?, ?, ?, ?, ?, ?, ?, DATETIME('now'), ?, ?, ?)",
-                   (user_id, user_data[message.chat.id].feedback_text, user_data[message.chat.id].license_key,
-                    user_data[message.chat.id].build_version, user_data[message.chat.id].revit_version, user_data[message.chat.id].file_path,
-                    user_data[message.chat.id].photo_path, user_data[message.chat.id].renga_version, user_data[message.chat.id].plugin_id, user_data[message.chat.id].plugins_build,))
+    if user_data[message.chat.id].plugin_category == "renga":
+        cursor.execute("INSERT INTO Renga_Feedback (user_id, feedback_text, license_key, renga_version, plugins_build, plugin_id, file_path, photo_path, created_at"
+                       ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, DATETIME('now'))",
+                       (user_id, user_data[message.chat.id].feedback_text, user_data[message.chat.id].license_key,
+                        user_data[message.chat.id].renga_version, user_data[message.chat.id].plugins_build, user_data[message.chat.id].plugin_id, user_data[message.chat.id].file_path,
+                        user_data[message.chat.id].photo_path, ))
+        data = {
+            "records": [
+                {
+                    "fields": {
+                        "user_id": user_id,
+                        "feedback_text": user_data[message.chat.id].feedback_text,
+                        "license_key": user_data[message.chat.id].license_key,
+                        "renga_version": user_data[message.chat.id].renga_version,
+                        "plugins_build": user_data[message.chat.id].plugins_build,
+                        "plugin_id": user_data[message.chat.id].plugin_id,
+                        "file_path": user_data[message.chat.id].file_path,
+                        "photo_path": user_data[message.chat.id].photo_path,
+                        "created_at": datetime.now(pytz.timezone("Europe/Moscow")).isoformat()
+                    }
+                }
+            ]
+        }
+        await create_record("Renga_Feedback", data)
+
+    else:
+        cursor.execute("INSERT INTO Revit_Feedback (user_id, feedback_text, license_key, revit_version, build_version, plugin_id, file_path, photo_path, created_at"
+                       ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, DATETIME('now'))",
+                       (user_id, user_data[message.chat.id].feedback_text, user_data[message.chat.id].license_key,
+                        user_data[message.chat.id].revit_version, user_data[message.chat.id].build_version, user_data[message.chat.id].plugin_id,
+                        user_data[message.chat.id].file_path, user_data[message.chat.id].photo_path,))
+        data = {
+            "records": [
+                {
+                    "fields": {
+                        "user_id": user_id,
+                        "feedback_text": user_data[message.chat.id].feedback_text,
+                        "license_key": user_data[message.chat.id].license_key,
+                        "revit_version": user_data[message.chat.id].revit_version,
+                        "build_version": user_data[message.chat.id].build_version,
+                        "plugin_id": user_data[message.chat.id].plugin_id,
+                        "file_path": user_data[message.chat.id].file_path,
+                        "photo_path": user_data[message.chat.id].photo_path,
+                        "created_at": datetime.now(pytz.timezone("Europe/Moscow")).isoformat()
+                    }
+                }
+            ]
+        }
+        await create_record("Revit_Feedback", data)
+
     conn.commit()
     await user_clear(message)
 
 async def get_chatgpt_response(user_message):
-    user_message = f'У вас есть информация о следующих плагинах:\n{plugin_short_descriptions}\n Пользователь спрашивает: {user_message}?\n Дай ответ информативно и без лишней воды:'
+    user_message = f"У вас есть информация о следующих плагинах:\n{plugin_short_descriptions}\n Пользователь спрашивает: {user_message}?\n Дай ответ информативно и без лишней воды:"
     try:
         with GigaChat(credentials=GPT_SECRET_KEY, verify_ssl_certs=False) as giga:
             response = giga.chat(user_message)
@@ -138,8 +183,23 @@ async def answer_generation(message):
     cursor.execute("SELECT user_id FROM Users WHERE t_user_chat_id = ?", (message.chat.id, ))
     user_id = cursor.fetchone()[0]
 
-    cursor.execute("INSERT INTO Questions (user_id, question, answer, created_at) VALUES (?, ?, ?, DATETIME('now'))", (user_id, user_query[:100] + '...', chatgpt_response[:100] + '...',))
+    cursor.execute("INSERT INTO Questions (user_id, question, answer, created_at) VALUES (?, ?, ?, DATETIME('now'))", (user_id, user_query[:100] + "...", chatgpt_response[:100] + "...",))
     conn.commit()
+
+    data = {
+        "records": [
+            {
+                "fields": {
+                    "user_id": user_id,
+                    "question": user_query[:100] + "...",
+                    "answer": chatgpt_response[:100] + "...",
+                    "created_at": datetime.now(pytz.timezone("Europe/Moscow")).isoformat()
+                }
+            }
+        ]
+    }
+    await create_record("Questions", data)
+
     await send_long_message(message.chat.id, chatgpt_response)
 
 async def send_data_to_bitrix(message, data):
@@ -156,42 +216,5 @@ async def send_data_to_bitrix(message, data):
         response = requests.post(
             f"{B24_WEBHOOK}crm.lead.add.json", json=payload
         )
-
-        if response.status_code == 200 and response.json().get("result"):
-            await bot.send_message(
-                message.chat.id,
-                "Ваши данные успешно отправлены в Битрикс24!"
-            )
-        else:
-            await bot.send_message(
-                message.chat.id,
-                f"Ошибка отправки данных в Битрикс24: {response.text}"
-            )
     except Exception as e:
-        await bot.send_message(
-            message.chat.id,
-            f"Произошла ошибка при взаимодействии с Битрикс24: {str(e)}"
-        )
-
-
-async def create_record(table_name: str, record: dict) -> dict:
-    table = Table(AIRTABLE_TOKEN, BASE_ID, table_name)
-    result = table.create(record)
-    return result
-
-async def get_record(table_name: str, filter: dict) -> dict:
-    formula = match(filter)
-    table = Table(AIRTABLE_TOKEN, BASE_ID, table_name)
-    result = table.all(formula=formula)
-    return result
-
-async def update_record(table_name: str, filter: dict, update: dict) -> dict:
-    formula = match(filter)
-    table = Table(AIRTABLE_TOKEN, BASE_ID, table_name)
-    record = table.all(formula=formula)
-    if len(record) > 0:
-        id = record[0]['id']
-        result = table.update(id, update)
-        return result
-    else:
-        return []
+        print(f"Произошла ошибка при взаимодействии с Битрикс24: {str(e)}")
