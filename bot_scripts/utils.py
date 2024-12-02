@@ -9,6 +9,7 @@ import requests
 from airtable_utils import create_record
 from datetime import datetime
 import pytz
+from airtable_utils import save_trace
 
 async def show_help_options(user_id):
     keyboard = kb.help_keyboard
