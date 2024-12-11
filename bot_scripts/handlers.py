@@ -6,8 +6,7 @@ import utils
 import kb
 import asyncio
 from aiogram import types
-import requests
-from airtable_utils import create_record, create_trace_data, save_trace
+from airtable_utils import create_record, save_trace
 from datetime import datetime
 import pytz
 

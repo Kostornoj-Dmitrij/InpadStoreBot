@@ -4,6 +4,7 @@ start_keyboard = types.InlineKeyboardMarkup()
 start_keyboard.add(types.InlineKeyboardButton('Помощь', callback_data='help'))
 start_keyboard.add(types.InlineKeyboardButton('Подробная информация о плагинах', callback_data='support'))
 start_keyboard.add(types.InlineKeyboardButton('Задать вопрос ИИ-консультанту', callback_data='questions'))
+
 #start_keyboard.add(types.InlineKeyboardButton('Оформить лицензию', callback_data='license'))
 
 question_keyboard = types.InlineKeyboardMarkup()

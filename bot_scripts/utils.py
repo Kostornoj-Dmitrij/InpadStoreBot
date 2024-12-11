@@ -199,6 +199,7 @@ async def answer_generation(message):
             }
         ]
     }
+
     await create_record("Questions", data)
 
     await send_long_message(message.chat.id, chatgpt_response)
