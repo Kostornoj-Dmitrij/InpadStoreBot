@@ -4,8 +4,7 @@ start_keyboard = types.InlineKeyboardMarkup()
 start_keyboard.add(types.InlineKeyboardButton('Помощь', callback_data='help'))
 start_keyboard.add(types.InlineKeyboardButton('Подробная информация о плагинах', callback_data='support'))
 start_keyboard.add(types.InlineKeyboardButton('Задать вопрос ИИ-консультанту', callback_data='questions'))
-
-#start_keyboard.add(types.InlineKeyboardButton('Оформить лицензию', callback_data='license'))
+start_keyboard.add(types.InlineKeyboardButton('Оформление лицензии', callback_data='license'))
 
 question_keyboard = types.InlineKeyboardMarkup()
 question_keyboard.add(types.InlineKeyboardButton('Задать вопрос ещё раз', callback_data='questions'))
@@ -136,3 +135,18 @@ renga_keyboard = types.InlineKeyboardMarkup()
 renga_keyboard.row(types.InlineKeyboardButton('Подсчет площадей', callback_data='renga_Подсчет площадейРенг'),
                    types.InlineKeyboardButton('Активация', callback_data='renga_Активация'))
 renga_keyboard.row(types.InlineKeyboardButton('Назад', callback_data='start'))
+
+license_keyboard_options = types.InlineKeyboardMarkup()
+license_keyboard_options.row(types.InlineKeyboardButton('Купить плагины', callback_data='buy_plugin'),
+                             types.InlineKeyboardButton('Протестировать плагины', callback_data='test_plugin'))
+license_keyboard_options.row(types.InlineKeyboardButton('Назад', callback_data='start'))
+
+fiz_or_ur_face = types.InlineKeyboardMarkup()
+fiz_or_ur_face.row(types.InlineKeyboardButton('Юр.Лицо', callback_data='ur_face'),
+                   types.InlineKeyboardButton('Физ.Лицо', callback_data='fiz_face'))
+fiz_or_ur_face.row(types.InlineKeyboardButton('Назад', callback_data='start'))
+
+plugin_demonstration = types.InlineKeyboardMarkup()
+plugin_demonstration.row(types.InlineKeyboardButton('Да', callback_data='demonstration_plugin'),
+                         types.InlineKeyboardButton('Нет', callback_data='no_demonstration_plugin'))
+plugin_demonstration.row(types.InlineKeyboardButton('Назад', callback_data='start'))

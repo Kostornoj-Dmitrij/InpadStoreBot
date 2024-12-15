@@ -6,7 +6,8 @@ import utils
 import kb
 import asyncio
 from aiogram import types
-from airtable_utils import create_record, save_trace
+import requests
+from airtable_utils import create_record, create_trace_data, save_trace
 from datetime import datetime
 import pytz
 
@@ -39,7 +40,7 @@ async def start(message: types.Message):
         }
         await create_record("Users", data)
 
-    await save_trace(user_id, "command", "start")
+    await save_trace(user_id, "command", "/start")
 
     keyboard = kb.start_keyboard
     await bot.send_message(user_id, "Привет! Добро пожаловать в бота.", reply_markup=keyboard)
@@ -132,6 +133,78 @@ async def renga_question_input(message):
     await bot.send_message(message.chat.id, "Отправьте, пожалуйста, скриншот")
 
 
+@dp.message_handler(lambda message: user_data[message.chat.id].state == "fio_input")
+async def fio_input(message):
+    await save_trace(message.chat.id, "fio_input", message.text)
+    user_data[message.chat.id].fio = message.text
+
+    keyboard = kb.fiz_or_ur_face
+    await bot.send_message(message.chat.id, "Вы Юр.Лицо или Физ.Лицо?",
+                           reply_markup=keyboard)
+
+
+@dp.message_handler(lambda message: user_data[message.chat.id].state == "company_input")
+async def company_input(message):
+    await save_trace(message.chat.id, "company_input", message.text)
+    user_data[message.chat.id].company_name = message.text
+    user_data[message.chat.id].state = "city_input"
+    await bot.send_message(message.chat.id, "Укажите город, в котором вы находитесь")
+
+
+@dp.message_handler(lambda message: user_data[message.chat.id].state == "city_input")
+async def city_input(message):
+    await save_trace(message.chat.id, "city_input", message.text)
+    user_data[message.chat.id].city = message.text
+    user_data[message.chat.id].state = "email_input"
+    await bot.send_message(message.chat.id, "Укажите вашу почту")
+
+
+@dp.message_handler(lambda message: user_data[message.chat.id].state == "email_input")
+async def email_input(message):
+    await save_trace(message.chat.id, "email_input", message.text)
+    user_data[message.chat.id].email = message.text
+    user_data[message.chat.id].state = "phone_number_input"
+    await bot.send_message(message.chat.id, "Укажите ваш номер телефона")
+
+
+@dp.message_handler(lambda message: user_data[message.chat.id].state == "phone_number_input")
+async def phone_number_input(message):
+    await save_trace(message.chat.id, "phone_number_input", message.text)
+    user_data[message.chat.id].phone_number = message.text
+    await bot.send_message(message.chat.id, "---Данная информация поможет нам с вами связаться---")
+    if user_data[message.chat.id].choice == "buy_plugin":
+        user_data[message.chat.id].state = "plugins_for_buy_input"
+        await bot.send_message(message.chat.id, "Напишите плагины, которые вы хотите приобрести")
+    elif user_data[message.chat.id].choice == "test_plugin":
+        user_data[message.chat.id].state = "plugins_for_test_input"
+        await bot.send_message(message.chat.id, "Напишите плагины, которые вы хотите протестировать")
+
+
+@dp.message_handler(lambda message: user_data[message.chat.id].state == "plugins_for_buy_input")
+async def plugins_for_buy_input(message):
+    await save_trace(message.chat.id, "plugins_for_buy_input", message.text)
+    user_data[message.chat.id].plugins_for_buy = message.text
+    keyboard = kb.plugin_demonstration
+    await bot.send_message(message.chat.id, "Нужна ли вам демонстрация плагина?",
+                           reply_markup=keyboard)
+
+
+@dp.message_handler(lambda message: user_data[message.chat.id].state == "plugins_for_test_input")
+async def plugins_for_test_input(message):
+    await save_trace(message.chat.id, "plugins_for_test_input", message.text)
+    user_data[message.chat.id].plugins_for_buy = message.text
+    user_data[message.chat.id].state = "license_count_input"
+    await bot.send_message(message.chat.id, "Укажите количество лицензий, которые вы хотите получить")
+
+
+@dp.message_handler(lambda message: user_data[message.chat.id].state == "license_count_input")
+async def license_count_input(message):
+    await save_trace(message.chat.id, "license_count_input", message.text)
+    user_data[message.chat.id].license_count = message.text
+    await utils.save_license_feedback(message)
+    await bot.send_message(message.chat.id, "Ваша информация была передана менеджеру")
+    await start(message)
+
 @dp.message_handler(lambda message: user_data[message.chat.id].state == "file_sending", content_types=["document"])
 async def file_sending(message):
     await save_trace(message.chat.id, "file_sending", "document")
@@ -148,12 +221,16 @@ async def screen_sending(message):
 async def handle_text(message):
     user_id = message.chat.id
     if message.text == "/help":
+        await save_trace(message.chat.id, "command", "/help")
         await utils.show_help_options(user_id)
     elif message.text == "/support":
+        await save_trace(message.chat.id, "command", "/support")
         await utils.show_support_options(user_id)
     elif message.text == "/questions":
+        await save_trace(message.chat.id, "command", "/questions")
         await utils.show_questions_options(user_id)
     elif message.text == "/license":
+        await save_trace(message.chat.id, "command", "/license")
         await utils.show_license_options(user_id)
 
 
@@ -184,6 +261,7 @@ async def callback_inline(call: types.CallbackQuery):
         await utils.show_questions_options(call.message.chat.id)
 
     elif call.data == "license":
+        await save_trace(call.message.chat.id, "command", "/license")
         await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
 
         user_data[call.message.chat.id].choice = "license"
@@ -367,6 +445,54 @@ async def callback_inline(call: types.CallbackQuery):
                                "Данный вопрос был передан отделу разработок, в ближайшее время с вами свяжется специалист")
         await start(call.message)
 
+    elif call.data == "buy_plugin":
+        await save_trace(call.message.chat.id, "license_option", "plugin_buy")
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+
+        user_data[call.message.chat.id].state = "fio_input"
+        user_data[call.message.chat.id].choice = "buy_plugin"
+
+        await bot.send_message(call.message.chat.id, "Укажите, пожалуйста, информацию о себе:")
+        await bot.send_message(call.message.chat.id, "Укажите ваше ФИО")
+
+    elif call.data == "test_plugin":
+        await save_trace(call.message.chat.id, "license_option", "plugin_test")
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+
+        user_data[call.message.chat.id].state = "fio_input"
+        user_data[call.message.chat.id].choice = "test_plugin"
+
+        await bot.send_message(call.message.chat.id, "Укажите, пожалуйста, информацию о себе:")
+        await bot.send_message(call.message.chat.id, "Укажите ваше ФИО")
+
+    elif call.data == "fiz_face":
+        await save_trace(call.message.chat.id, "face_choice", "fiz_face")
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+
+        user_data[call.message.chat.id].face = "fiz_face"
+        user_data[call.message.chat.id].state = "company_input"
+
+        await bot.send_message(call.message.chat.id, "Укажите название вашей компании")
+
+    elif call.data == "ur_face":
+        await save_trace(call.message.chat.id, "face_choice", "ur_face")
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id))
+
+        user_data[call.message.chat.id].face = "ur_face"
+        user_data[call.message.chat.id].state = "company_input"
+
+        await bot.send_message(call.message.chat.id, "Укажите название вашей компании")
+
+    elif call.data == "demonstration_plugin":
+        await save_trace(call.message.chat.id, "demonstration_should_input", "yes")
+        user_data[call.message.chat.id].demonstration_should = "Да"
+        user_data[call.message.chat.id].state = "license_count_input"
+        await bot.send_message(call.message.chat.id, "Укажите количество лицензий, которые вы хотите приобрести")
+    elif call.data == "no_demonstration_plugin":
+        await save_trace(call.message.chat.id, "demonstration_should_input", "no")
+        user_data[call.message.chat.id].demonstration_should = "Нет"
+        user_data[call.message.chat.id].state = "license_count_input"
+        await bot.send_message(call.message.chat.id, "Укажите количество лицензий, которые вы хотите приобрести")
     else:
         await bot.answer_callback_query(call.id, text="Ошибка!")
 

@@ -16,6 +16,12 @@ async def create_record(tableName, data):
     r = requests.post(endpoint, json=data, headers=headers)
     print(r.text)
 
+async def update_record(tableName, data, user_id):
+    record_id = await get_record_id(tableName, user_id)
+    endpoint = f"https://api.airtable.com/v0/{airTable_BaseId}/{tableName}/{record_id}"
+    r = requests.patch(endpoint, json=data, headers=headers)
+    print(r.text)
+
 async def create_trace_data(user_id, act_type, act):
     return {
         "records": [
@@ -39,3 +45,14 @@ async def save_trace(user_id, act_type, act):
     conn.commit()
     data = await create_trace_data(user_database_id, act_type, act)
     await create_record("User_Trace", data)
+
+async def get_record_id(tableName, user_id):
+    endpoint = f"https://api.airtable.com/v0/{airTable_BaseId}/{tableName}"
+    response = requests.get(endpoint, headers=headers)
+    records = response.json().get('records', [])
+    record_id = None
+    for record in records:
+        if record.get('fields', {}).get('user_id') == user_id:
+            record_id = record['id']
+            break
+    return record_id

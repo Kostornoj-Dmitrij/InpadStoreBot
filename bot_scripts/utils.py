@@ -6,7 +6,7 @@ import uuid
 from config import GPT_SECRET_KEY, B24_WEBHOOK
 from gigachat import GigaChat
 import requests
-from airtable_utils import create_record
+from airtable_utils import create_record, update_record
 from datetime import datetime
 import pytz
 from airtable_utils import save_trace
@@ -26,7 +26,8 @@ async def show_questions_options(user_id):
     await bot.send_message(user_id, "Задайте ваш вопрос", reply_markup=keyboard)
 
 async def show_license_options(user_id):
-    await show_support_options(user_id)
+    keyboard = kb.license_keyboard_options
+    await bot.send_message(user_id, "Выберите одну из кнопок", reply_markup=keyboard)
 
 async def get_links(plugin):
     cursor.execute("SELECT video_link, guide_link, plugin_link FROM Plugins WHERE name = ?", (plugin, ))
@@ -61,6 +62,7 @@ async def user_clear(message):
     user_data[message.chat.id].plugin_id = ""
     user_data[message.chat.id].plugin_category = "chat_start"
     user_data[message.chat.id].plugins_build = ""
+    user_data[message.chat.id].fio = ""
 
 async def file_saving(message):
     if message.document:
@@ -110,7 +112,6 @@ async def screen_saving(message):
 async def save_feedback(message):
     cursor.execute("SELECT user_id FROM Users WHERE t_user_chat_id = ?", (message.chat.id, ))
     user_id = cursor.fetchone()[0]
-
     if user_data[message.chat.id].plugin_category == "renga":
         cursor.execute("INSERT INTO Renga_Feedback (user_id, feedback_text, license_key, renga_version, plugins_build, plugin_id, file_path, photo_path, created_at"
                        ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, DATETIME('now'))",
@@ -164,6 +165,71 @@ async def save_feedback(message):
     conn.commit()
     await user_clear(message)
 
+async def save_license_feedback(message):
+    cursor.execute("SELECT * FROM Users WHERE t_user_chat_id = ?", (message.chat.id, ))
+    user_id = cursor.fetchone()[0]
+    cursor.execute("UPDATE Users SET fio = ?, face = ?, company_name = ?, city = ?, email = ?, phone_number = ? WHERE user_id = ?",
+                   (user_data[message.chat.id].fio, user_data[message.chat.id].face, user_data[message.chat.id].company_name,
+                    user_data[message.chat.id].city, user_data[message.chat.id].email, user_data[message.chat.id].phone_number, user_id))
+    cursor.execute("SELECT * FROM Users WHERE user_id = ?", (user_id, ))
+    selected_data = cursor.fetchone()
+    data = {
+        "fields": {
+            "fio": selected_data[4],
+            "face": selected_data[5],
+            "company_name": selected_data[6],
+            "city": selected_data[7],
+            "email": selected_data[8],
+            "phone_number": selected_data[9],
+        }
+    }
+
+    await update_record("Users", data, user_id)
+    if user_data[message.chat.id].choice == "buy_plugin":
+        cursor.execute("INSERT INTO Licenses_Requests (request_type, user_id, plugins, license_count, created_at, demonstration_should"
+                       ") VALUES (?, ?, ?, ?, DATETIME('now'), ?)",
+                       ("Покупка плагинов", user_id, user_data[message.chat.id].plugins_for_buy, user_data[message.chat.id].license_count,
+                        user_data[message.chat.id].demonstration_should))
+        data = {
+            "records": [
+                {
+                    "fields": {
+                        "request_type": "Покупка плагинов",
+                        "user_id": user_id,
+                        "plugins": user_data[message.chat.id].plugins_for_buy,
+                        "license_count": user_data[message.chat.id].license_count,
+                        "created_at": datetime.now(pytz.timezone("Europe/Moscow")).isoformat(),
+                        "demonstration_should": user_data[message.chat.id].demonstration_should
+                    }
+                }
+            ]
+        }
+        await create_record("Licenses_Requests", data)
+
+    else:
+        cursor.execute("INSERT INTO Licenses_Requests (request_type, user_id, plugins, license_count, created_at, demonstration_should"
+                       ") VALUES (?, ?, ?, ?, DATETIME('now'), ?)",
+                       ("Тестирование плагинов", user_id, user_data[message.chat.id].plugins_for_buy, user_data[message.chat.id].license_count,
+                        user_data[message.chat.id].demonstration_should))
+        data = {
+            "records": [
+                {
+                    "fields": {
+                        "request_type": "Тестирование плагинов",
+                        "user_id": user_id,
+                        "plugins": user_data[message.chat.id].plugins_for_buy,
+                        "license_count": user_data[message.chat.id].license_count,
+                        "created_at": datetime.now(pytz.timezone("Europe/Moscow")).isoformat(),
+                        "demonstration_should": user_data[message.chat.id].demonstration_should
+                    }
+                }
+            ]
+        }
+        await create_record("Licenses_Requests", data)
+
+    conn.commit()
+    await user_clear(message)
+
 async def get_chatgpt_response(user_message):
     user_message = f"У вас есть информация о следующих плагинах:\n{plugin_short_descriptions}\n Пользователь спрашивает: {user_message}?\n Дай ответ информативно и без лишней воды:"
     try:
@@ -199,7 +265,6 @@ async def answer_generation(message):
             }
         ]
     }
-
     await create_record("Questions", data)
 
     await send_long_message(message.chat.id, chatgpt_response)
